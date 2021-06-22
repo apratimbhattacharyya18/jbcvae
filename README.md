@@ -1,8 +1,8 @@
 # Introduction
 
 <p align="center">
-  <img width="320" height="200" src="/assets/europvi1.jpg" hspace="30">
-  <img width="320" height="200" src="/assets/europvi2.jpg" hspace="30">
+  <img width="320" height="180" src="/assets/europvi1.jpg" hspace="30">
+  <img width="320" height="180" src="/assets/europvi2.jpg" hspace="30">
 </p>
 
 
@@ -48,7 +48,7 @@ Additionally, the batch size and number of training epochs can be set using the 
 
 # Evaluation
 
-Pre-trained models are saved automatically in the ./ckpts/ folder (We will release pre-trainined models soon). To evalute checkpoints,
+Pre-trained models are saved automatically in the ./ckpts/ folder (a pre-trainined model is already provided). To evalute checkpoints,
         
         python main.py --data_root <path to Euro-PVI> --from_checkpoint --checkpoint_path <path to checkpoint> 
     

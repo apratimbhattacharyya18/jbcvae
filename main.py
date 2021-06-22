@@ -116,6 +116,8 @@ if __name__ == "__main__":
 	parser.add_argument('--data_root', default='../europvi/traj_data/', type=str, help='Path to location of the dataset.')
 	parser.add_argument('--batch_size', default=64, type=int, help='Batch size.')
 	parser.add_argument('--epochs', default=200, type=int, help='Training epochs.')
+	parser.add_argument('--lr', default=0.001, type=float, help='Learning rate.')
+	parser.add_argument('--beta', default=0.1, type=float, help='KL weight.')
 	parser.add_argument('--test_epoch_interval', default=10, type=int, help='Test epoch interval.')
 	parser.add_argument('--from_checkpoint', action='store_true', help='Evaluate Checkpoint.')
 	parser.add_argument('--checkpoint_path', default='./ckpts/jbeta_cvae_europvi.pt', type=str, help='Path to location of the checkpoint.')
@@ -123,6 +125,8 @@ if __name__ == "__main__":
 	data_root = args.data_root
 	batch_size = args.batch_size
 	epochs = args.epochs
+	lr = args.lr
+	beta = args.beta
 	test_epoch_interval = args.test_epoch_interval
 	from_checkpoint = args.from_checkpoint
 	checkpoint_path = args.checkpoint_path
@@ -135,7 +139,7 @@ if __name__ == "__main__":
 	jbeta_cvae = JointBetaCVAE( input_dim_x=4, output_dim_y=5, embedding_dim=32, hidden_dim=128, noise_dim=32,
 		num_layers=1, classes=True ).cuda()
 
-	optimizer_gen = optim.Adam( jbeta_cvae.parameters(),lr=0.003)
+	optimizer_gen = optim.Adam( jbeta_cvae.parameters(),lr=lr)
 	sched = optim.lr_scheduler.ExponentialLR(optimizer_gen,gamma=0.9999)
 
 	best_results = {}
@@ -161,7 +165,7 @@ if __name__ == "__main__":
 					x_last=obj_traj[:,0,-1,:], loss_mask=loss_mark, classes=classes,
 					seq_start_end=seq_start_end, timesteps=target_traj.size(2), train=True)
 
-				loss = nll_loss + 0.1*kl_loss# \beta = 0.1
+				loss = nll_loss + beta*kl_loss# \beta = 0.1
 				loss = torch.mean(loss)
 				loss.backward()
 				optimizer_gen.step()
@@ -169,9 +173,10 @@ if __name__ == "__main__":
 				
 				train_bar.set_description('Train ELBO = %.2f | Epoch %d -- Iteration ' % (loss.item(),epoch))
 
-			#torch.save(jbeta_cvae, checkpoint_path)
-			if epoch % test_epoch_interval == 0 or epoch == 1:
+			if epoch % test_epoch_interval == 0:
 				results_dict = evaluate_europvi( loader_test, jbeta_cvae, num_samples=20)
+				if results_dict['error_3_sec'] < best_results['error_3_sec']:
+					torch.save(jbeta_cvae, checkpoint_path)
 				best_results = update_best_scores( results_dict, best_results)
 				print('Best results:  ', best_results)
 
